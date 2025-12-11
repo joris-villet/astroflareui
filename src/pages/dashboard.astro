@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ky from 'ky';
+
+// console.log('Astro url => ', Astro.url.origin)
+type Tables = {
+  table_name: string;
+}
+
+type Data = {
+  message: string;
+  success: boolean;
+  data: Tables[]
+}
+
+const tables = await ky.get<Data>(`${Astro.url.origin}/api/tables/read`).json()
+
+// console.log('tables => ', tables.data)
+
+---
+
+<Layout>
+	<p>dashboard</p>
+
+  <ul>
+    {tables && tables.data.map((table: Tables) => {
+      return (
+      <li>
+        <a href={`/table/${table.table_name}`}>{table.table_name}</a>
+      </li>
+      )
+    })}
+  </ul>
+</Layout>
