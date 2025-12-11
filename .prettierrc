@@ -1,0 +1,14 @@
+{
+  "plugins": ["prettier-plugin-astro", "prettier-plugin-svelte"],
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "printWidth": 80,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "svelteSortOrder": "scripts-markup-options-styles",
+  "svelteStrictMode": true,
+  "svelteBracketNewLine": true,
+  "svelteAllowShorthand": true,
+  "svelteIndentScriptAndStyle": true
+}

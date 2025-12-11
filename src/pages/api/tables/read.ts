@@ -1,5 +1,5 @@
-import type { APIRoute } from "astro";
-import { connectDB } from "../../../lib/db";
+import type { APIRoute } from 'astro';
+import { connectDB } from '../../../lib/db';
 
 export const GET: APIRoute = async (context: any) => {
   try {
@@ -7,20 +7,20 @@ export const GET: APIRoute = async (context: any) => {
     const db = connectDB(env.DATABASE_URL);
 
     const tables = await db
-      .select("table_name")
-      .from("information_schema.tables")
+      .select('table_name')
+      .from('information_schema.tables')
       .where({
-        table_schema: "public", // ← crucial pour PostgreSQL
-        table_type: "BASE TABLE",
+        table_schema: 'public', // ← crucial pour PostgreSQL
+        table_type: 'BASE TABLE',
       })
-      .andWhere("table_name", "not like", "pg_%") // optionnel : exclut les tables système résiduelles
-      .andWhere("table_name", "not like", "sql_%");
+      .andWhere('table_name', 'not like', 'pg_%') // optionnel : exclut les tables système résiduelles
+      .andWhere('table_name', 'not like', 'sql_%');
 
-    console.log("tables from endpoint => ", tables);
+    // console.log("tables from endpoint => ", tables);
 
     return new Response(
       JSON.stringify({
-        message: "success",
+        message: 'success',
         successs: true,
         data: tables,
       })
@@ -28,7 +28,7 @@ export const GET: APIRoute = async (context: any) => {
   } catch (error) {
     return new Response(
       JSON.stringify({
-        message: "This was a Error!",
+        message: 'This was a Error!',
         success: false,
         data: error,
       })

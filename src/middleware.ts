@@ -1,5 +1,5 @@
 export function onRequest(context: any, next: any) {
-  // console.log(context.url.origin);
+  // console.log(context.params);
 
   context.locals.env = context.locals.runtime.env;
 

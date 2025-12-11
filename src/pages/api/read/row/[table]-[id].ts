@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
-import { connectDB } from '../../../lib/db';
+import { connectDB } from '../../../../lib/db';
 
 export const GET: APIRoute = async (context: any) => {
   try {
-    const { table } = context.params;
-    // console.log("table params => ", table);
+    console.log('JE PASSE DANS ROW ID ENDPOINT');
+    const { table, id } = context.params;
+    console.log('table params => ', table);
+    console.log('id params => ', id);
     const env = context.locals.env;
     // console.log("env local => ", env);
 
@@ -12,9 +14,9 @@ export const GET: APIRoute = async (context: any) => {
     // console.log("db => ", db);
 
     // const data = await db.execute(sql`SELECT * FROM ${sql.raw(table)} LIMIT 100`);
-    const data = await db.select('*').from(`${table}`).limit(20);
+    const data = await db.select('*').from(`${table}`).where('id', id);
 
-    // console.log("table clicked => ", data);
+    console.log('row clicked => ', data);
 
     return new Response(
       JSON.stringify({

@@ -1,0 +1,40 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import ky from 'ky';
+import type { Data } from '../../../interfaces';
+import type { Tables } from '../../../types';
+import TableRows from '../../../components/TableRows.svelte';
+// console.log('Astro url => ', Astro.url.origin)
+
+const { table } = Astro.params;
+// console.log('astro params => ', Astro.params)
+
+const tables = await ky.get<Data>(`${Astro.url.origin}/api/tables/read`).json();
+// console.log('tables => ', tables.data);
+---
+
+<Layout>
+  <section class="grid grid-cols-12">
+    <div
+      class="col-span-3 px-2 py-4 bg-neutral-100 w-full min-h-screen overflow-y-auto"
+    >
+      <ul>
+        {
+          tables &&
+            tables.data.map((table: Tables) => {
+              return (
+                <li>
+                  <a href={`/dashboard/table/${table.table_name}`}>
+                    {table.table_name}
+                  </a>
+                </li>
+              );
+            })
+        }
+      </ul>
+    </div>
+    <div class="col-span-9 px-2 py-4 bg-neutral-50 w-full min-h-screen">
+      <TableRows table={table!} client:only="svelte" />
+    </div>
+  </section>
+</Layout>
