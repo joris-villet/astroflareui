@@ -1,4 +1,4 @@
-import type { Table, Tables } from "../types";
+import type { Tables } from '../types';
 
 export interface Data {
   message: string;
@@ -6,8 +6,19 @@ export interface Data {
   data: any[];
 }
 
-export interface DataTable {
+interface ApiResponse<T> {
   message: string;
-  success: boolean;
-  data: Table[];
+  success: boolean; // TypeScript va te forcer à l'épeler correctement
+  data: T[];
+}
+
+// export interface DataTable {
+//   message: string;
+//   success: boolean;
+//   data: Table[];
+// }
+
+// export type Table = Record<string, string>;
+export interface Table {
+  table_name: string;
 }

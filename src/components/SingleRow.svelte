@@ -1,6 +1,8 @@
 <!-- <script lang="ts">
   import ky from 'ky';
   import type { TableColumn, TableRow } from '../types';
+  import type { Data } from '../interfaces';
+  import { onMount } from 'svelte';
 
   interface Props {
     table: string;
@@ -8,62 +10,47 @@
   }
   let props: Props = $props();
 
-  let columns: TableColumn[] = $state([]);
-  let rows: TableRow[] = $state([]);
+  let columns = $state<any[]>([]);
+  let rows = $state<any[]>([]);
 
   const fetchRow = async () => {
     try {
-      // console.log('table => ', table);
-      const response = await ky
+      const result = await ky
         .get(`/api/read/row/${props.table}-${props.id}`)
-        .json<{ success: boolean; data: TableRow[] }>();
+        .json<Data>();
 
-      console.log('response => ', response);
-
-      if (response.success && response.data) {
-        rows = response.data;
-        // 🔑 Récupère les colonnes depuis la 1re ligne
-        columns = Object.keys(response.data[0]);
+      if (result.success) {
+        rows.push(result.data[0]); // Garder l'objet directement
+        columns.push(Object.keys(result.data[0]));
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.log('error row => ', error);
     }
   };
 
-  // Appel initial
-  $effect(() => {
+  onMount(() => {
     fetchRow();
+    $inspect('rows => ', rows);
   });
 </script>
 
-{#if rows.length === 0}
-  <p class="text-gray-500">Aucune donnée</p>
-{:else}
-  <table class="w-full">
-    <thead>
-      <tr>
-        {#each columns as col}
-          <th class="border p-2 text-left">{col}</th>
-        {/each}
-      </tr>
-    </thead>
-    <tbody>
-      {#each rows as row (row.id)}
-        <tr>
-          {#each columns as col}
-            <td class="p-2">
-              {row[col] == null ? '—' : String(row[col])}
-            </td>
-          {/each}
-        </tr>
+{#if rows.length}
+  <div class="flex flex-col gap-2">
+    {#each rows as row}
+      {#each columns as column}
+        <label for={column}>{column}</label>
+        <input type="text" value={row[column]} />
       {/each}
-    </tbody>
-  </table>
-{/if} -->
+    {/each}
+  </div>
+{/if}
+ -->
 
 <script lang="ts">
   import ky from 'ky';
   import type { TableColumn, TableRow } from '../types';
+  import type { Data } from '../interfaces';
+  import { onMount } from 'svelte';
 
   interface Props {
     table: string;
@@ -71,78 +58,45 @@
   }
   let props: Props = $props();
 
-  let columns: TableColumn[] = $state([]);
-  let rows: TableRow[] = $state([]);
+  let columns = $state<any[]>([]);
+  let rows = $state<any[]>([]);
 
   const fetchRow = async () => {
     try {
-      const response = await ky
+      const result = await ky
         .get(`/api/read/row/${props.table}-${props.id}`)
-        .json<{ success: boolean; data: TableRow[] }>();
+        .json<Data>();
 
-      if (response.success && response.data.length > 0) {
-        rows = response.data; // ← tableau avec 1 seul objet
-        columns = Object.keys(response.data[0]);
+      if (result.success) {
+        rows = result.data; // Directement les objets !
+        columns = Object.keys(result.data[0]);
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.log('error row => ', error);
     }
   };
 
-  $effect(() => {
+  onMount(() => {
     fetchRow();
   });
 </script>
 
-{#if rows.length === 0}
-  <p class="text-gray-500">Aucune donnée</p>
-{:else}
-  <!-- ✅ On prend le PREMIER (et seul) item -->
-  {#each [rows[0]] as row}
-    <div class="max-w-3xl space-y-4 p-2">
-      {#each columns as col}
-        {#if col === 'id'}
-          <div class="flex w-full">
-            <div class="w-full">id</div>
-            <div class="w-full">{row[col]}</div>
+{#if rows.length}
+  <div class="flex flex-col gap-2">
+    {#each rows as row}
+      {#each columns as column}
+        {#if column === 'id'}
+          <div class="flex flex-crow gap-2">
+            <p>{column}</p>
+            <p>{row[column]}</p>
           </div>
         {:else}
-          <label for={col}>{col}</label>
-          <input
-            type="text"
-            value={row[col] ?? ''}
-            oninput={(e) => (row[col] = (e.target as HTMLInputElement).value)}
-            class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+          <div class="flex flex-col gap-2">
+            <label for={column}>{column}</label>
+            <input type="text" id={column} value={row[column]} />
+          </div>
         {/if}
-        <!-- <div class="flex items-start py-2 border-b border-gray-100">
-
-          <div class="w-1/3 font-medium text-gray-700 pr-4 truncate">
-            {col}
-          </div>
-          <div class="w-2/3">
-            {#if col === 'id'}
-              <span class="text-gray-500 font-mono">{row[col]}</span>
-            {:else}
-              <input
-                type="text"
-                value={row[col] ?? ''}
-                oninput={(e) =>
-                  (row[col] = (e.target as HTMLInputElement).value)}
-                class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            {/if}
-          </div>
-        </div> -->
       {/each}
-    </div>
-  {/each}
+    {/each}
+  </div>
 {/if}
-
-<!-- <label for={col}>{col}</label>
-            <input
-              type="text"
-              value={row[col] ?? ''}
-              oninput={(e) => (row[col] = (e.target as HTMLInputElement).value)}
-              class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            /> -->

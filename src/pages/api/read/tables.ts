@@ -1,27 +1,22 @@
 import type { APIRoute } from 'astro';
-import { getDb } from '../../../../lib/db';
+import { getDb } from '../../../lib/db';
 
 export const GET: APIRoute = async (context: any) => {
   try {
-    console.log('JE PASSE DANS ROW ID ENDPOINT');
-    const { table, id } = context.params;
-    console.log('table params => ', table);
-    console.log('id params => ', id);
     const env = context.locals.env;
-    // console.log("env local => ", env);
-
     const db = getDb(env.DATABASE_URL);
+
     const data = await db
-      .selectFrom(table)
-      .selectAll()
-      .where('id', '=', id)
+      .selectFrom('information_schema.tables')
+      .select(['table_name'])
+      .where('table_schema', '=', 'public')
       .execute();
 
-    // console.log('row clicked => ', data);
+    // console.log('tables from endpoint => ', data);
 
     return new Response(
       JSON.stringify({
-        message: 'This was a GET from read table!',
+        message: 'success',
         success: true,
         data,
       })
@@ -30,6 +25,8 @@ export const GET: APIRoute = async (context: any) => {
     return new Response(
       JSON.stringify({
         message: 'This was a Error!',
+        success: false,
+        data: error,
       })
     );
   }

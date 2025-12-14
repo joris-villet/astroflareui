@@ -1,67 +1,127 @@
 <script lang="ts">
   import ky from 'ky';
-  import type { TableRow, TableColumn } from '../types';
+  import type { Data } from '../interfaces';
+  import { onMount } from 'svelte';
+  // import EmptyTable from "./EmptyTable.svelte";
 
   let { table } = $props();
+  let rows = $state<any[]>([]);
 
-  let columns: TableColumn[] = $state([]);
-  let rows: TableRow[] = $state([]);
-
-  const fetchTableRows = async () => {
+  const fetchRows = async () => {
     try {
-      // console.log('table => ', table);
-      const response = await ky
-        .get(`/api/read/${table}`)
-        .json<{ success: boolean; data: TableRow[] }>();
+      const result = await ky.get(`/api/read/table/${table}`).json<Data>();
+      // console.log('result rows => ', result);
 
-      // console.log('response => ', response);
-
-      if (response.success && response.data.length > 0) {
-        rows = response.data;
-        // 🔑 Récupère les colonnes depuis la 1re ligne
-        columns = Object.keys(response.data[0]);
-      } else {
-        rows = [];
-        // 🔁 Si pas de données, on demande la structure à la DB
-        const schema = await ky
-          .get(`/api/schema/${table}`)
-          .json<{ columns: TableColumn[] }>();
-        columns = schema.columns;
+      if (result.success) {
+        rows.push(...result.data);
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.log('error rows => ', error);
     }
   };
 
-  // Appel initial
+  onMount(() => {
+    fetchRows();
+  });
+
+  const columns = $derived.by(() => {
+    if (rows.length === 0) return [];
+    return Object.keys(rows[0]);
+  });
+
+  let columnWidths = $state<Record<string, string>>(
+    Object.fromEntries(columns.map((col) => [col, 'auto']))
+  );
+
+  // État du resize en cours
+  let resizingCol: string | null = $state(null);
+  let startX = 0;
+  let startWidth = 0;
+
+  // Démarrer le resize
+  function startResize(col: string, event: MouseEvent) {
+    resizingCol = col;
+    startX = event.clientX;
+    const currentWidth = columnWidths[col];
+    startWidth = currentWidth.endsWith('px') ? parseFloat(currentWidth) : 200; // fallback si 'auto'
+
+    event.preventDefault();
+
+    // Ajouter les listeners globaux
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('mouseup', stopResize);
+  }
+
+  // Pendant le déplacement
+  function doResize(event: MouseEvent) {
+    if (!resizingCol) return;
+    const delta = event.clientX - startX;
+    const newWidth = Math.max(50, startWidth + delta); // min 50px
+    columnWidths[resizingCol] = `${newWidth}px`;
+  }
+
+  // Arrêter le resize
+  function stopResize() {
+    resizingCol = null;
+    window.removeEventListener('mousemove', doResize);
+    window.removeEventListener('mouseup', stopResize);
+  }
+
   $effect(() => {
-    fetchTableRows();
+    if (Object.keys(columnWidths).length > 0) {
+      localStorage.setItem(
+        `table-${table}-widths`,
+        JSON.stringify(columnWidths)
+      );
+    }
   });
 </script>
 
 {#if rows.length === 0}
-  <p class="text-gray-500">Aucune donnée</p>
+  No Rows
 {:else}
-  <table class="w-full">
-    <thead>
-      <tr>
+  <div class="overflow-auto">
+    <table class="w-full table-fixed border-collapse">
+      <colgroup>
         {#each columns as col}
-          <th class="border p-2 text-left">{col}</th>
+          <col style="width: {columnWidths[col]};" />
         {/each}
-      </tr>
-    </thead>
-    <tbody>
-      {#each rows as row (row.id)}
-        <tr class="group">
+      </colgroup>
+      <thead class="select-none">
+        <tr>
           {#each columns as col}
-            <td class="p-2 group-hover:bg-amber-200 duration-400">
-              <a class="block" href={`/dashboard/table/${table}/row/${row.id}`}>
-                {row[col] == null ? '—' : String(row[col])}
-              </a>
-            </td>
+            <th class="border p-2 text-left relative group">
+              {col}
+              <!-- Grip de resize (à droite de chaque <th>, sauf la dernière)  -->
+              {#if columns.indexOf(col) < columns.length - 1}
+                <button
+                  class="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-orange-400/30"
+                  aria-label="Resize column"
+                  onmousedown={(e) => startResize(col, e)}
+                ></button>
+              {/if}
+            </th>
           {/each}
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each rows as row (row.id)}
+          <tr
+            class="group border-l-3 border-transparent hover:border-orange-500 duration-200"
+          >
+            {#each columns as col}
+              <td class="group-hover:text-orange-500 truncate">
+                <a
+                  class="block py-2 pl-2"
+                  href={`/dashboard/table/${table}/row/${row.id}`}
+                >
+                  {row[col] == null ? '—' : String(row[col])}
+                </a>
+              </td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 {/if}

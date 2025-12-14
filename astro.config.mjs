@@ -1,19 +1,21 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig } from 'astro/config';
 
-import svelte from "@astrojs/svelte";
-import tailwindcss from "@tailwindcss/vite";
-import cloudflare from "@astrojs/cloudflare";
+import svelte from '@astrojs/svelte';
+import tailwindcss from '@tailwindcss/vite';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
   integrations: [svelte()],
-
+  prefetch: {
+    defaultStrategy: 'tap',
+  },
   vite: {
     plugins: [tailwindcss()],
   },
-  output: "server",
+  output: 'server',
   adapter: cloudflare({
-    imageService: "compile",
+    imageService: 'compile',
   }),
 });
